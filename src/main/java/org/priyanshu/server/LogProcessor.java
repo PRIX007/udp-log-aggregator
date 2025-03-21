@@ -11,16 +11,18 @@ public class LogProcessor implements Runnable {
 
     @Override
     public void run() {
+        // Clients send logs in format:
+        // <sequence_number>:<log_level>:<message>
         String rawLog = new String(packet.getData(), 0, packet.getLength());
 
-        // Extract log level (e.g., "ERROR: Disk full" → "ERROR")
-        String[] parts = rawLog.split(":", 2);
-        String level = parts.length > 0 ? parts[0].trim() : "UNKNOWN";
+        // Extract log level
+        String[] parts = rawLog.split(":", 3);  // expects "seq:level:message"
+        String level = parts.length > 1 ? parts[1].trim() : "UNKNOWN";
 
         // Store log
         LogStorage.store(level, rawLog);
 
-        // Track metrics
-        PacketLossTracker.trackPacket(rawLog);
+        // Track metrics (now passing the full packet)
+        PacketLossTracker.trackPacket(packet, rawLog);
     }
 }

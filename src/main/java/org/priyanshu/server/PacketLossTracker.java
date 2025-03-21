@@ -1,18 +1,30 @@
 package org.priyanshu.server;
 
-public class PacketLossTracker {
-    private static int expectedSeq = 1;
+import java.net.DatagramPacket;
+import java.util.concurrent.ConcurrentHashMap;
 
-    public static void trackPacket(String log) {
+public class PacketLossTracker {
+    // sequence numbers per client (IP+port as key)
+    private static final ConcurrentHashMap<String, Integer> clientSequences = new ConcurrentHashMap<>();
+
+    public static void trackPacket(DatagramPacket packet, String log) {
         try {
+            String clientId = packet.getAddress().getHostAddress() + ":" + packet.getPort();
+
             // Extract sequence number
             int currentSeq = Integer.parseInt(log.split(":")[0]);
+            int expectedSeq = clientSequences.getOrDefault(clientId, 1);
 
             if (currentSeq != expectedSeq) {
-                System.err.printf("⚠️ Missing packets! Expected %d, got %d\n",
-                        expectedSeq, currentSeq);
+                System.err.printf("⚠️ Client %s: Missing packets %d-%d%n",
+                        clientId, expectedSeq, currentSeq - 1);
             }
-            expectedSeq = currentSeq + 1;
-        } catch (Exception ignored) {}
+
+            // Update expected sequence
+            clientSequences.put(clientId, currentSeq + 1);
+
+        } catch (Exception e) {
+            System.err.println("Error tracking packet: " + e.getMessage());
+        }
     }
 }
