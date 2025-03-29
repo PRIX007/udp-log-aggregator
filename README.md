@@ -65,6 +65,7 @@ $socket.Close()
 ``` 
 
 ##  UML Daigram
+![image info](./images/UML_Daigram_UDP_Aggregator.png)
 
 
 ---
